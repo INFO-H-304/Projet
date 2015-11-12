@@ -5,10 +5,8 @@
 #include <string>
 #include <map> //
 #include <set> //
-#include <sys/stat.h> //to get the size of a file
 
 using namespace std;
-struct stat results; 
 
 class db_info
 {
@@ -41,6 +39,18 @@ db_info::db_info()
 	long rcount = 0;
 }
 
+void query_init(const char * queryname, long symtype, long strands)
+{
+	if (argc < 3) 
+	{
+		cout << "Il n'y a que deux paramètre" << endl;
+		return 1;
+	}
+	queryname = argv[2];
+	long qlength;
+	string qdescription;
+	//ifstream iquery 
+
 
 int main(int argc, char *argv[])
 {
@@ -72,7 +82,7 @@ int main(int argc, char *argv[])
 		/* Now that we have the entire file buffered, 
 		 * we can take a look at some binary information*/
 		for (int i = 0; i < 3000 ; i++)
-			cout << buffer[i] ;
+			fprintf("%i",buffer[i]) ;
 		
 
 		if (idb)
