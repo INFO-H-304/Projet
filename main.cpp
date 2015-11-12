@@ -1,4 +1,6 @@
+#include <vector>
 #include <iostream>
+#include <algorithm>
 #include <fstream>
 #include <string>
 #include <map> //
@@ -49,10 +51,11 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 	
+
 	ifstream idb(argv[1], ios::in | ios::binary); //mode binaire 
 	
 	if (idb) {
-		//get length to have the file into the buffer
+		//get length to have the whole file into the buffer
 		idb.seekg(0,idb.end); //move to the end
 		int length = idb.tellg(); //tellg() is the current position
 		idb.seekg(0,idb.beg); //move to the beg
@@ -66,6 +69,12 @@ int main(int argc, char *argv[])
 		
 		idb.read(buffer,length); 
 		
+		/* Now that we have the entire file buffered, 
+		 * we can take a look at some binary information*/
+		for (int i = 0; i < 3000 ; i++)
+			cout << buffer[i] ;
+		
+
 		if (idb)
 			cout << "success" << endl;
 		else 
@@ -73,7 +82,9 @@ int main(int argc, char *argv[])
 		idb.close();
 	
 		delete[] buffer;
+		
 	}
+		
 	
 	return 0;
 }
