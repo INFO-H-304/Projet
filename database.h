@@ -9,7 +9,8 @@ class Database
 private:
 	string name;
 	int nseq;
-	int nres;
+	int restot;
+	int resmax;
 	
 
 public:
@@ -17,13 +18,11 @@ public:
 	
 	string getName();
 	int getNSeq();
-	int getNRes(); //à delete qd pin résolu
-	//string getDesc();
-	//vector<char> getSequence();
+	int getResMax(); //à delete qd pin résolu
+	int getResTot(); //à delete qd pin résolu
 	
 	void setName(string namedb);
 	void icrNSeq();
-	//void setNRes(int nresdb);
-	//void setDesc(string descq);
-	//void addResidue(char residue);
+	void setResMax(int resmaxdb); //à delete qd pin résolu
+	void icrResTot(); //à delete qd pin résolu
 };

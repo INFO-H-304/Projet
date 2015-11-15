@@ -4,7 +4,8 @@ Database::Database()
 {
 	name = "";
 	nseq = 0;
-	nres = 0;
+	restot = 0;
+	resmax = 0;
 	//string desc;
 	
 }
@@ -19,9 +20,14 @@ int Database::getNSeq()
 	return nseq;
 }
 
-int Database::getNRes()
+int Database::getResMax()
 {
-	return nres;
+	return resmax;
+}
+
+int Database::getResTot()
+{
+	return restot;
 }
 
 /*string Database::getDesc()
@@ -44,12 +50,12 @@ void Database::icrNSeq()
 	nseq++;
 }
 	
-/*void Database::setDesc(string descq)
+void Database::setResMax(int resmaxdb)
 {
-	desc = descq;
+	resmax = resmaxdb;
 }
 
-void Database::addResidue(char residue)
+void Database::icrResTot()
 {
-	sequence.push_back(residue);
-}*/
+	restot++;
+}

@@ -9,9 +9,14 @@
 
 #include "query.h"
 #include "database.h"
+#include <time.h>
+
 
 int main(int argc, char *argv[])
 {
+	const clock_t begin_time = clock();
+    time_t t = time(0);   // get time now
+    struct tm * now = localtime( & t );
 /////////////////////////////////////////////////////////
 //DATABASE
 	if (argc < 2) 
@@ -40,14 +45,31 @@ int main(int argc, char *argv[])
 	db_psq[strlen(argv[1]) + 3] = 'q';
 	db_pin[strlen(argv[1]) + 2] = 'i';
 	db_pin[strlen(argv[1]) + 3] = 'n';
+	
+	ifstream idb_pin(db_pin, ios::in | ios::binary); //lecture en binaire 
+	if (idb_pin) 
+	{ 
+		idb_pin.seekg(0,idb_pin.end); //move to the end
+		int length = idb_pin.tellg(); //tellg() is the current position
+		idb_pin.seekg(0,idb_pin.beg); //move to the beg
+		char* buffer = new char[length]; 
+		cout << "Reading " << length << " characters..." << endl;
+		
+		idb_pin.read(buffer,length); //read the file into memory
+		for (int i = 35; i < 54; i++)
+			cout << buffer[i];
+			
+		idb_pin.close();
+	
+		delete[] buffer;	
+	}
+	
 //	
 	vector< vector<char> > seq; 
 	vector<char> new_seq; //local
 	seq.push_back(new_seq);
 	int compteur_seq = 0;
-	int compteur_res = 0;
-	int compteur_resmax = 0;
-	int compteur_restot = 0;
+	int compteur_res = 0; //local
 	char psq_ascii[28] = {'-','A','B','C','D','E','F','G','H','I','K','L','M','N',
 			'P','Q','R','S','T','V','W','X','Y','Z','U','*','O','J'};
 	ifstream idb_psq(db_psq, ios::in | ios::binary); //lecture en binaire 
@@ -66,17 +88,20 @@ int main(int argc, char *argv[])
 			{
 				seq[compteur_seq].push_back(psq_ascii[(int)buffer[i]]);
 				compteur_res++;
-				compteur_restot++;
+				db.icrResTot();
 			}
 			else
 			{
 				compteur_seq++;
 				seq.push_back(new_seq);
-				if (compteur_res > compteur_resmax)
-					compteur_resmax = compteur_res;
+				if (compteur_res > db.getResMax())
+					db.setResMax(compteur_res);
 				compteur_res = 0;
 			}
 		}
+		idb_psq.close();
+	
+		delete[] buffer;	
 	}
 
 
@@ -97,7 +122,7 @@ int main(int argc, char *argv[])
 		bool getheader = true; //local
 		vector<char> current_header; //local
 		
-		for (int i = 8; i < length/10; i++)
+		for (int i = 8; i < length; i++)
 		{
 			if (buffer[i] == 's' && buffer[i+1] == 'p' && buffer[i+2] == '|')
 			{ //nouveau header de séquence
@@ -117,7 +142,7 @@ int main(int argc, char *argv[])
 	
 		delete[] buffer;	
 	}
-
+	
 /////////////////////////////////////////////////////////
 //QUERY
 
@@ -146,7 +171,7 @@ int main(int argc, char *argv[])
 /////////////////////////////////////////////////////////
 //COUT
 	cout << endl;
-	int id = 0;
+	/*int id = 0;
 	for(map<vector<char>, vector<char> >::iterator it=map_seq.begin(); it!=map_seq.end(); ++it)
     { //CECI PRINT HEADERS+SEQUENCES
 		cout << endl << endl << "gnl|BL_ORD_ID|" << id << " ";
@@ -156,17 +181,21 @@ int main(int argc, char *argv[])
         for (int i = 0; i < it->second.size(); i++)
 			cout << (it->second[i]); //chaque char du header
 		id++;
-    }
-    
-    cout <<compteur_restot<<endl;
-    cout <<compteur_resmax<<endl;
+    }*/
     
 	cout << "Database file: " << db.getName() << endl;
-	cout << "Database size: " << db.getNSeq() << " sequences" << endl;
-
+	cout << "Database size: " << db.getResTot() << " residues in " <<db.getNSeq() << " sequences" << endl;
+	cout << "Longest db seq: " << db.getResMax() << " residues" << endl;
 	cout << "Query file name: " << query.getName() << endl;
 	cout << "Query length: " << query.getLength() << " residues" << endl;
 	cout << "Query description: " << query.getDesc() << endl;
+	
+    cout << "Search started: " << (now->tm_year + 1900) << '-' << (now->tm_mon + 1) << '-'<<  now->tm_mday << ", "<<  now->tm_hour << ':' << now->tm_min << ':' << now->tm_sec<< endl;
+	time_t tbis = time(0);
+	struct tm * after = localtime( & tbis );
+	cout << "Search completed: " << (after->tm_year + 1900) << '-' << (after->tm_mon + 1) << '-'<<  after->tm_mday << ", "<<  after->tm_hour << ':' << after->tm_min << ':' << after->tm_sec<< endl;
+	cout << "Time elapsed: " << float( clock () - begin_time ) /CLOCKS_PER_SEC <<"s"<< endl;
+	//cout << "Speed: " << float( clock () - begin_time ) << endl;
 	
 	return 0;
 }
