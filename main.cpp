@@ -1,143 +1,172 @@
-#include <vector>
 #include <iostream>
 #include <algorithm>
 #include <fstream>
-#include <string>
-#include <map> //
-#include <set> //
+#include <map>
+#include <string.h> 
+//#include <bitset>
+//#include <byteswap.h>
+//#include <endian.h>
 
-using namespace std;
-
-class db_info
-{
-public:
-	string title;
-	string basename;
-	string time;
-	
-	long seqcount;
-	long maxseq;
-	long rcount;
-	
-	string taxid_filename;//
-	ifstream taxid_file; //
-	
-	long offset_phr;//
-	long offset_psq;//
-	db_info();
-	long getnames(); //
-};
-
-db_info::db_info()
-{
-	string title = "";
-	string basename = "";
-	string time = "";
-	
-	long seqcount = 0;
-	long maxseq = 0;
-	long rcount = 0;
-}
-
-//void query_init(const char * queryname, long symtype, long strands)
-
-
+#include "query.h"
+#include "database.h"
 
 int main(int argc, char *argv[])
 {
-	//read a file into memory
+/////////////////////////////////////////////////////////
+//DATABASE
 	if (argc < 2) 
 	{
 		cout << "Il n'y a qu'un paramètre" << endl;
 		return 1;
 	}
 	
-	string basename = argv[1];
+	Database db;
+	db.setName(argv[1]); 
+//FILES
+	char files_to_read[strlen(argv[1]) + 4], db_pin[strlen(argv[1]) + 4], db_phr[strlen(argv[1]) + 4], db_psq[strlen(argv[1]) + 4];
 	
-	ifstream idb(argv[1], ios::in | ios::binary); //mode binaire 
+	for (int j = 0; j < strlen(argv[1]); j++)
+		files_to_read[j] = argv[1][j]; //uniprot_sprot.fasta
+	files_to_read[strlen(argv[1])] = '.';
+	files_to_read[strlen(argv[1]) + 1] = 'p';
 	
-	if (idb) {
-		//get length to have the whole file into the buffer
-		idb.seekg(0,idb.end); //move to the end
-		int length = idb.tellg(); //tellg() is the current position
-		idb.seekg(0,idb.beg); //move to the beg
-		
+	strncpy(db_pin, files_to_read, strlen(argv[1]) + 4);
+	strncpy(db_phr, files_to_read, strlen(argv[1]) + 4);
+	strncpy(db_psq, files_to_read, strlen(argv[1]) + 4);
+	
+	db_phr[strlen(argv[1]) + 2] = 'h';
+	db_phr[strlen(argv[1]) + 3] = 'r';
+	db_psq[strlen(argv[1]) + 2] = 's';
+	db_psq[strlen(argv[1]) + 3] = 'q';
+	db_pin[strlen(argv[1]) + 2] = 'i';
+	db_pin[strlen(argv[1]) + 3] = 'n';
+//	
+	vector< vector<char> > seq; 
+	vector<char> new_seq; //local
+	seq.push_back(new_seq);
+	int compteur_seq = 0;
+	int compteur_res = 0;
+	int compteur_resmax = 0;
+	int compteur_restot = 0;
+	char psq_ascii[28] = {'-','A','B','C','D','E','F','G','H','I','K','L','M','N',
+			'P','Q','R','S','T','V','W','X','Y','Z','U','*','O','J'};
+	ifstream idb_psq(db_psq, ios::in | ios::binary); //lecture en binaire 
+	if (idb_psq) 
+	{ //get length to have the whole file into the buffer					
+		idb_psq.seekg(0,idb_psq.end); //move to the end
+		int length = idb_psq.tellg(); //tellg() is the current position
+		idb_psq.seekg(0,idb_psq.beg); //move to the beg
 		char* buffer = new char[length]; 
-		
 		cout << "Reading " << length << " characters..." << endl;
 		
-		
-		//read data as a block
-		
-		idb.read(buffer,length); 
-		
-		/* Now that we have the entire file buffered, 
-		 * we can take a look at some binary information*/
-		
-		char psq_ascii[28] = {'-','A','B','C','D','E','F','G','H','I','K','L','M','N',
-			'P','Q','R','S','T','V','W','X','Y','Z','U','*','O','J'};
-		 
-		for (int i = 0; i < 3000 ; i++)
+		idb_psq.read(buffer,length); //read the file into memory
+		for (int i = 0; i < length; i++)
 		{
-			//printf("%x", buffer[i]);
-			//cout << (int)buffer[i];
-			//if (argv[1] == basename)
-				//cout << psq_ascii[(int)buffer[i]]; //imprime db_sequences
-			
+			if (psq_ascii[(int)buffer[i]] != '-')
+			{
+				seq[compteur_seq].push_back(psq_ascii[(int)buffer[i]]);
+				compteur_res++;
+				compteur_restot++;
+			}
+			else
+			{
+				compteur_seq++;
+				seq.push_back(new_seq);
+				if (compteur_res > compteur_resmax)
+					compteur_resmax = compteur_res;
+				compteur_res = 0;
+			}
+		}
+	}
+
+
+	map<vector<char>, vector<char> > map_seq;
+	
+	ifstream idb_phr(db_phr, ios::in | ios::binary); //lecture en binaire 
+	if (idb_phr) 
+	{ //get length to have the whole file into the buffer					
+		idb_phr.seekg(0,idb_phr.end); //move to the end
+		int length = idb_phr.tellg(); //tellg() is the current position
+		idb_phr.seekg(0,idb_phr.beg); //move to the beg
+		char* buffer = new char[length]; 
+		cout << "Reading " << length << " characters..." << endl;
+		
+		idb_phr.read(buffer,length); //read the file into memory
+								//now that we have the entire file buffered, we can take a look at some binary information*/
+		
+		bool getheader = true; //local
+		vector<char> current_header; //local
+		
+		for (int i = 8; i < length/10; i++)
+		{
+			if (buffer[i] == 's' && buffer[i+1] == 'p' && buffer[i+2] == '|')
+			{ //nouveau header de séquence
+				getheader = true;
+				db.icrNSeq();
+				if (db.getNSeq() != 1)
+					map_seq[current_header] = seq[db.getNSeq()];
+				current_header.clear();
+			}
+			if (buffer[i]>=32 && buffer[i]<=126 && getheader == true)
+				current_header.push_back(buffer[i]);
+			else //on rejete les caractères non-ASCII
+				getheader = false;			
 		}
 
-
-		if (idb)
-			cout << "success" << endl;
-		else 
-			cout << "error : only" << idb.gcount() << " could be read";
-		idb.close();
+		idb_phr.close();
 	
-		delete[] buffer;
-		
+		delete[] buffer;	
 	}
-		
+
+/////////////////////////////////////////////////////////
+//QUERY
+
 	if (argc < 3) 
 	{
-		cout << "Il n'y a que deux paramètre" << endl;
+		cout << "Il n'y a que deux paramètres" << endl;
 		return 1;
 	}
-	 
 
-	string query_name = argv[2];
-	int query_length;
-	string query_description;
-	
+	Query query;
+	query.setName(argv[2]);
 	ifstream iquery(argv[2]);
 	if (iquery)
 	{
-		string description;
-		getline(iquery, description);
-		description = description.substr(1); //on retire le >
-		query_description = description; //QUERY_DESCRIPTION
+		string first_line;
+		getline(iquery, first_line);
+		query.setDesc(first_line.substr(1)); //on retire le >
 		
-		int beg_seq = iquery.tellg(); 
-		char c;
-		while (iquery >> noskipws >> c)
-			query_length++;
-			
-		/*iquery.seekg(0,iquery.end);
-		query_length = (int)iquery.tellg() - beg_seq; //QUERY LENGTH
-		
-		vector<char> query_sequence();
-		char c;
-		while (iquery >> c)
-			query_sequence.push_back(c);
-		query_length = sizeof(query_sequence);*/
-		
+		for (char c; iquery >> c;)
+			query.addResidue(c);
+		query.setLength(query.getSequence().size());
+
 		iquery.close();
 	}
 	
-	cout << "Query file name: "<<query_name<<endl;
-	cout << "Query length: "<<query_length<<" residues"<<endl;
-	cout << "Query description: " <<query_description<<endl;
-	
-	
+/////////////////////////////////////////////////////////
+//COUT
+	cout << endl;
+	int id = 0;
+	for(map<vector<char>, vector<char> >::iterator it=map_seq.begin(); it!=map_seq.end(); ++it)
+    { //CECI PRINT HEADERS+SEQUENCES
+		cout << endl << endl << "gnl|BL_ORD_ID|" << id << " ";
+		for (int i = 0; i < it->first.size(); i++)
+			cout << (it->first)[i]; //chaque 
+		cout << endl;
+        for (int i = 0; i < it->second.size(); i++)
+			cout << (it->second[i]); //chaque char du header
+		id++;
+    }
+    
+    cout <<compteur_restot<<endl;
+    cout <<compteur_resmax<<endl;
+    
+	cout << "Database file: " << db.getName() << endl;
+	cout << "Database size: " << db.getNSeq() << " sequences" << endl;
+
+	cout << "Query file name: " << query.getName() << endl;
+	cout << "Query length: " << query.getLength() << " residues" << endl;
+	cout << "Query description: " << query.getDesc() << endl;
 	
 	return 0;
 }
