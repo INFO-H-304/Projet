@@ -3,7 +3,9 @@
 #include <string.h>
 #include <fstream>
 
-#include "query.h"
+#include "query.cpp"
+#include "gotoh.h"
+
 
 using std::cout;
 using std::endl;
@@ -25,15 +27,20 @@ using std::max;
 //  Ix(i; j) : the best score up to (i; j), given that xi is aligned to a gap
 //  Iy(i; j) : the best score up to (i; j), given that yj is aligned to a gap
 
+
+Gotoh::Gotoh(){
+	
+}
+
 // Affine Gap
-  int AffineGapWeight(int gapOpenPenalty, int gapExtendPenalty,int k){
+  int Gotoh::AffineGapWeight(int gapOpenPenalty, int gapExtendPenalty,int k){
   	int w_k=-gapOpenPenalty - gapExtendPenalty*(k-1);
    	return w_k;
   }
   
 	  
   //Matrice Initialisation M Ix Iy
-  void InitMatGotohMax(int** M, int** Ix, int** Iy, string pReference){
+  void Gotoh::InitMatGotohMax(int** M, int** Ix, int** Iy, string pReference){
 	int n =pReference.size();
 	int m = Query().getLenght();
    	for(int i = 0; i < m+1; i++) {
@@ -48,7 +55,7 @@ using std::max;
   }
   
 
-  void CalculateAllMatrixGotohMax(int** M, int** Ix, int** Iy, int** S, string pReference,int gapOpenPenalty, int gapExtendPenalty){
+  void Gotoh::CalculateAllMatrixGotohMax(int** M, int** Ix, int** Iy, int** S, string pReference,int gapOpenPenalty, int gapExtendPenalty){
 	InitMatGotohMax(M, Ix, Iy,pReference,  pQuery) ;
 	int n =pReference.size();
 	int m = Query().getLenght();
